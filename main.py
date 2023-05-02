@@ -1,23 +1,42 @@
-import requests
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+import argparse
 from service.db import StreetEasyDataBase
 import service.web as web
 
-def main():
-    datastore = StreetEasyDataBase()
+def main(args):
+    # Initiate data store
+    # datastore = StreetEasyDataBase()
 
-    # while True:
-    #     links = scraper.get_link_by_class("mw-jump-link")
-    #     for link in links:
-    #         print(link.get_attribute('href'))
+    # Run in headless mode, assuming we passed a query already
+    if args.query is not None:
+        se_search_query = arg.query
+        se_full_url = "https://streeteasy.com/for-rent/{}".format(se_search_query)
+    else:
+        # Run interactive, wait for input before proceeding with the scraping.
+        se_full_url = "https://www.streeteasy.com"
+    
+    se_session = web.ResultPages(url = se_full_url)
 
-    #     scraper.next_page()
+    if not args.headless:
+        _ = input("Running scraper interactive. Search query in browser and press any key to continue.")
 
-    #     if not scraper.next_page_button:
-    #         break
+    
+
+    # Pull all URLs for every listing
+    se_session.get_all_listings()
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--interactive",
+        help="Run in interactive mode, selecting search terms manually on page before scrape",
+        dest="headless",
+        action="store_false"
+        )
+    parser.set_defaults(headless = True)
+    parser.add_argument("--query",
+                    type=str,
+                    help="A street easy query to scrape from (i.e. url after streeteasy.com/for-rent/...)")
+
+    arg = parser.parse_args()
+    main(arg)
