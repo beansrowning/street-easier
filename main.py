@@ -14,15 +14,16 @@ def main(args):
         # Run interactive, wait for input before proceeding with the scraping.
         se_full_url = "https://www.streeteasy.com"
     
-    se_session = web.ResultPages(url = se_full_url)
+    # se_session = web.ResultPages(url = se_full_url)
 
-    if not args.headless:
-        _ = input("Running scraper interactive. Search query in browser and press any key to continue.")
+    with web.FirstPageSearch("https://www.streeteasy.com") as se_session:
+        se_session.test_entry()
 
-    
+    # if not args.headless:
+        # _ = input("Running scraper interactive. Search query in browser and press any key to continue.")
 
     # Pull all URLs for every listing
-    se_session.get_all_listings()
+    # se_session.get_all_listings()
 
 
 if __name__ == "__main__":
