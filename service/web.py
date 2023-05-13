@@ -1,11 +1,11 @@
 from seleniumbase import Driver
-from seleniumbase.fixtures.page_actions import hover_and_click
+from seleniumbase.fixtures.page_actions import hover_and_click, hover_on_element
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from bs4 import BeautifulSoup
-import time
+import random
 
 class EasyCrawler():
     """
@@ -19,6 +19,17 @@ class EasyCrawler():
         Initialize the web driver and 
         """
         self.url = url
+    
+    def rand_wait_and_scroll(self, time_range: tuple[float, float] = (1.5, 5.), scroll_range: tuple[int, int] = (50, 200)):
+        """
+        Bot-detection defeat by random waiting and scrolling
+        """
+        to_wait = random.uniform(*time_range)
+        to_scroll = random.uniform(*scroll_range)
+
+        driver = self.driver
+        WebDriverWait(driver, to_wait)
+        driver.execute_script("window.scrollTo({}, {})".format(to_scroll, to_scroll)) 
     
     def hover_and_click_by_xpath(self, sel : str, wait : int = 5) -> None:
         """
@@ -37,7 +48,23 @@ class EasyCrawler():
             click_by = By.XPATH
         )
 
+    def navigate_in_new_page(self, url: str) :
+        """
+        Using pre-initialized driver, navigate to url in a new page
+        and switch driver to new window.
+        """
+        driver = self.driver
+        # BUG: driver.get doesn't work for some reason. Using this instead.
+        self.driver.execute_script("window.open('{}')".format(url))
+        # Swap DOM to open window
+
+        driver.switch_to.window(driver.window_handles[1])
+
     def page_loaded(self, trigger_elem : str, timeout: int, by = By.CLASS_NAME) -> None:
+        """
+        Quick short-hand to detect if page is loaded
+        by checking for the presence of an element
+        """
         try:
             element_present = ec.presence_of_element_located((by, trigger_elem))
             WebDriverWait(self.driver, timeout).until(element_present)
@@ -49,44 +76,27 @@ class EasyCrawler():
     def __enter__(self, **kwargs):
         self.driver = Driver(uc=True)
 
+        self.navigate_in_new_page(self.url)
+
         return self
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Quit driver on exit from context manager
         """
         self.driver.quit()
-# Searching on main page
 
-# Pull up neighborhood menu
-# -> find_element(By.XPATH, '//button[text()="Choose neighborhoods or boroughs"]').click()
-# -> find_element(By.XPATH, '//button[text()="See all neighborhoods"]').click()
 
-# For each borough
-# -> find_element(By.XPATH, '//div[p[text()="<borough>"]]').click()
-
-# For each neighborhood
-# -> find_element(By.XPATH, '//div[p[contains(@class, "Text-sc-zyowvr-0 styled__NeighborhoodTitle") and text()="<neighborhood>"]]//input').click()
-
-# Submit
-# -> find_element(By.XPATH, '//button[text()="Apply"]').click()
-
-# Enter min price
-# -> find_element(By.XPATH, '//input[contains(@class, "TextField-minPrice")]').send_keys("<minprice>")
-
-# Enter Max price
-# -> find_element(By.XPATH, '//input[contains(@name, "max")]').send_keys("<maxprice>")
-
-# No Fee?
-# -> find_element(By.XPATH, '//input[contains(@name, "no-fee")]').click()
-# Query
-# -> find_element(By.XPATH, '//button[span[text()="Search"]]').hover_and_click()
 class FirstPageSearch(EasyCrawler):
+    """
+    Currently a debugging class to try navigating the top-page serach function
+    to avoid detection by passing straight search URL
+    """
     # XPATH values for elements on the main page 
     top_page_elements = {
         "search_bar": '//div[contains(@class, "styled__LocationFilterWrapper")]//button',
         "search_bar_drilldown": '//button[text()="See all neighborhoods"]',
-        "borough" : '//div[p[text()="{}"]]',
-        "neighborhood" : '//div[p[contains(@class, "Text-sc-zyowvr-0 styled__NeighborhoodTitle") and text()="{}"]]//input',
+        "borough" : '//div[p[contains(text(), "{}")]]',
+        "neighborhood" : '//div[p[contains(@class, "Text-sc-zyowvr-0 styled__NeighborhoodTitle") and contains(text(), "{}")]][1]//span',
         "search_apply" : '//button[text()="Apply"]',
         "min_price" : '//input[contains(@class, "TextField-minPrice")]',
         "max_price" : '//input[contains(@name, "max")]',
@@ -96,44 +106,37 @@ class FirstPageSearch(EasyCrawler):
 
     def test_entry(self):
         
-        driver = self.driver
-        # Navigate to top-level
-        # BUG: driver.get doesn't work for some reason. Using this instead.
-        driver.execute_script("window.open('{}')".format(self.url))
-        # Swap DOM to open window
-
-        driver.switch_to.window(driver.window_handles[1])
-
         # Check that page is loaded based on first element we need to click
         self.page_loaded(self.top_page_elements["search_bar"], 10, by = By.XPATH)
-
+        
         # Choose neighborhood and borough menu
-        input("hit enter")
+        self.rand_wait_and_scroll()
         self.hover_and_click_by_xpath(self.top_page_elements["search_bar"])
 
-        input("Press enter")
+        self.rand_wait_and_scroll()
         # Expand through to bring up all options
         self.hover_and_click_by_xpath(self.top_page_elements["search_bar_drilldown"])
 
-        input("Press enter")
+        self.rand_wait_and_scroll()
         # Choose borough
         self.hover_and_click_by_xpath(self.top_page_elements["borough"].format("Manhattan"))
 
-        input("Press enter")
+        self.rand_wait_and_scroll()
 
         # Choose neighborhood
         self.hover_and_click_by_xpath(self.top_page_elements["neighborhood"].format("Chelsea"))
 
-        input("press enter")
+        self.rand_wait_and_scroll()
 
         # Apply changes
         self.hover_and_click_by_xpath(self.top_page_elements["search_apply"])
 
 
-        input("press enter")
+        self.rand_wait_and_scroll()
 
         # Search
         self.hover_and_click_by_xpath(self.top_page_elements["search"])
+        input("Check and see if it worked")
 
 
 class ResultPages(EasyCrawler):
@@ -174,17 +177,13 @@ class ResultPages(EasyCrawler):
         driver = self.driver
 
         try:
-            next_page_click = driver.find_element(By.XPATH, "//li[@class='next']")
             next_page_button = driver.find_element(By.XPATH, "//a[@rel='next']")
         except:
             return 1
         
         driver.execute_script("arguments[0].scrollIntoView();", next_page_button)
-        # next_page_click.click_safe()
 
-        WebDriverWait(self.driver, 10).until(ec.element_to_be_clickable(next_page_button))
-        next_page_click.click()
-        # driver.execute_script("arguments[0].click();", next_page_button)
+        self.hover_and_click_by_xpath("//li[@class='next']")
 
         return 0
 
@@ -198,14 +197,17 @@ class ResultPages(EasyCrawler):
         input("press enter to continue.")
 
         # Save page soup
-        self.page_soup = BeautifulSoup(self.driver.page_source, features="lxml")
+        self.page_soup = BeautifulSoup(driver.page_source, features="lxml")
 
         listing_cards = self.page_soup.find_all('li', {'class': 'searchCardList--listItem'})
 
         self.listings.append([listing_cards])
         # Extract attributes from listings pages
         for listing in listing_cards:
+            top_level_attr = dict()
+
             pass
+
             # TODO: Extract all listing details from page,
             # then init new ListingPage class and extract those details
             # from downstream methods
@@ -240,5 +242,17 @@ class ListingPage(EasyCrawler):
     def parse_listing(self):
         pass
 
-        # neighborhood
-        # 
+        # When Available
+        # -> //div[h6[contains(text(), "Available on")]]//div[contains(@class, "Vitals-data")] text
+        # Days on Market
+        # -> //div[h6[contains(text(), "Days On Market")]]//div[contains(@class, "Vitals-data")] text
+        # Price Change
+        # -> //div[h6[contains(text(), "Last Price Change")]]//div[contains(@class, "Vitals-data")] text
+        # Saves
+        # -> //div[contains(@class, "popularity")] text
+        # Main Amenities
+        # -> //ul[contains(@class, "AmenitiesBlock")]//li
+        # Bldg Amenities
+        # -> //ul[contains(@class, "AmenitiesBlock-list")]//li
+        # Borough, neighborhood hierarchy (multiple items, subtract the first which is "rentals")
+        # //ul[contains(@class, "Breadcrumb Breadcrumb--detailsPage")]//span[contains(@itemprop, "name")]
