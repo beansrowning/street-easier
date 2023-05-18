@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from bs4 import BeautifulSoup
 import random
+import threading
+import queue
 
 class EasyCrawler():
     """
@@ -79,6 +81,7 @@ class EasyCrawler():
         self.navigate_in_new_page(self.url)
 
         return self
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Quit driver on exit from context manager
