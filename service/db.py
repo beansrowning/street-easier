@@ -1,6 +1,6 @@
 import pymongo
 
-class StreetEasyDataBase():
+class StreetEasierDataBase():
     """
     A simple wrapper class to interface with MongoDB
 
@@ -10,8 +10,8 @@ class StreetEasyDataBase():
         self.client = pymongo.MongoClient(host, port)
         self.database = self.client[database_name]
 
-    def initialize_database(self):
-        if not self.database.exists():
+    def initialize_collection(self, collection_name):
+        if not self.database.get_collection(collection_name):
             self.database.create_database()
 
     def insert_listing(self, collection_name, document):

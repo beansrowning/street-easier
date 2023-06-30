@@ -27,6 +27,12 @@ class Geographic():
         if (self.credits_remaining - credits_needed > 0):
             raise OverQueryLimit
 
+    def get_lines(self, routing: dict) -> list:
+        """
+        run on output of self.get_routing() to return the subway lines utilized in trip
+        """
+        pass
+
     def get_closest_poi(self, poi_name: str, bias: list(float, float)):
         """
         reverse-geocode the name of a place of interest relative to the proximity of a pre-defined point.

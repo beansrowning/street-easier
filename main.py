@@ -1,5 +1,5 @@
 import argparse
-from service.db import StreetEasyDataBase
+from service.db import StreetEasierDataBase
 import service.web as web
 
 def main(args):
